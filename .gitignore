@@ -1,0 +1,10 @@
+# Exclude Jupyter checkpoints
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
+
+# Exclude pycache
+__pycache__
+
+# Exclue misc
+typings
+.vscode
