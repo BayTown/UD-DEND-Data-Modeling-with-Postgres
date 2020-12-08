@@ -79,62 +79,21 @@ Here you have a look at the Entity Relationship Diagram
 
 The ETL pipeline consists of two main functions that are implemented in `etl.py`
 
-- `process_song_file` - Here the data from the respective song file is processed and transferred to the database
-```python
-  def process_song_file(cur, filepath):
-    # open song file
-    df = pd.read_json(filepath, lines=True)
+- `process_song_file`
+  - Here the data from the respective song file is processed and transferred to the database
 
-    # insert song record
-    song_data = df[['song_id', 'title', 'artist_id', 'year', 'duration']].values.tolist()[0]
-    cur.execute(song_table_insert, song_data)
-    
-    # insert artist record
-    artist_data = df[['artist_id', 'artist_name', 'artist_location', 'artist_latitude', 'artist_longitude']].values.tolist()[0]
-    cur.execute(artist_table_insert, artist_data)
-  ```
-  - `process_log_file` - Here the data from the respective log file is processed and transferred to the database
-  ```python
-  def process_log_file(cur, filepath):
-    # open log file
-    df = pd.read_json(filepath, lines=True)
+- `process_log_file`
+  - Here the data from the respective log file is processed and transferred to the database
 
-    # filter by NextSong action
-    df = df[df['page']=='NextSong']
-
-    # convert timestamp column to datetime
-    t = pd.to_datetime(df['ts'], unit='ms')
-    
-    # insert time data records
-    time_data = (t, t.dt.hour, t.dt.day, t.dt.isocalendar().week, t.dt.month, t.dt.year, t.dt.weekday)
-    column_labels = ('start_time', 'hour', 'day', 'week', 'month', 'year', 'weekday')
-    time_df = pd.concat(time_data, axis=1, keys=column_labels)
-
-    for i, row in time_df.iterrows():
-        cur.execute(time_table_insert, list(row))
-
-    # load user table
-    user_df = df[['userId', 'firstName', 'lastName', 'gender', 'level']]
-
-    # insert user records
-    for i, row in user_df.iterrows():
-        cur.execute(user_table_insert, row)
-
-    # insert songplay records
-    for index, row in df.iterrows():
-        
-        # get songid and artistid from song and artist tables
-        results = cur.execute(song_select, (row.song, row.artist, row.length))
-        songid, artistid = results if results else None, None
-        
-        # generate unique songplay id
-        songplay_id = str(uuid.uuid4())
-        # convert timestamp
-        start_time = pd.to_datetime(row.ts, unit='ms')
-        # insert songplay record
-        songplay_data = (songplay_id, start_time, int(row.userId), row.level, songid, artistid, row.sessionId, row.location, row.userAgent)
-        cur.execute(songplay_table_insert, songplay_data)
-  ```
+## Run the scripts
+To generate the tables in the database run:
+```bash
+python create_tables.py
+```
+And then to run the ETL-Pipeline run the following script:
+```bash
+python etl.py
+```
 
 ## Conclusion
 The data is now clearly structured and the analytics team now has an easy way to query the data.  
